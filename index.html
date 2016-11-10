@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Photo Thumbnails</title>
+    <style>
+        * { box-sizing: border-box; }
+        #container { max-width: 1000px; height:1000px; margin: 0 auto; }
+        #container div { min-width: 25%; min-height: 200px; display: inline-block; }
+        .image { cursor: pointer; width: 50px; height: 50px; padding: 5px; }
+        .image img { width: 100%; height: 100%;}
+        h1,h2 { text-align: center; }
+
+        /* The main figure element that serves as the overlay */
+        #lightbox {
+            background: rgba(0,0,0,.8);
+        }
+
+        /* The main image in the large view */
+        #lightbox img {
+            max-width: 96%;
+            max-height: 96%;
+            border-radius: .25em;
+            transition: all .5s;
+            -webkit-transition: all .5s;
+            -moz-transition: all .5s;
+        }
+
+        #lightbox img.lightbox-to-next {
+            transform: translate(999em, 0);
+            -webkit-transform: translate(999em, 0);
+            -moztransform: translate(999em, 0);
+        }
+
+        #lightbox img.lightbox-to-prev {
+            transform: translate(-999em, 0);
+            -webkit-transform: translate(-999em, 0);
+            -moztransform: translate(-999em, 0);
+        }
+
+        /* The image title as caption */
+        .lightbox-caption {
+            color: rgba(255,255,255, .75);
+            font-family: sans-serif;
+            text-align: center;
+            max-width: 60em;
+            margin: auto;
+            padding: 1em 1.5em 2em 1.5em;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: 0;
+            transition: all .5s;
+            -webkit-transition: all .5s;
+            -moz-transition: all .5s;
+            background: rgba(0,0,0, .7);
+            border-radius: .25em;
+        }
+
+        /* buttons in the lightbox */
+        #lightbox button {
+            cursor: pointer;
+            border: none;
+            font-size: 1em;
+            position: absolute;
+            background: rgba(0,0,0,.8);
+            color: #fff;
+            padding: .25em;
+            border-radius: .25em;
+            font-family: sans-serif;
+            font-weight: bold;
+        }
+
+        #lightbox button:focus {
+            outline: none;
+            box-shadow: 0 0 0 .25em #fff;
+        }
+
+        .lightbox-ctrl {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
+            max-width: 60em;
+        }
+
+        /* close button */
+        .lightbox-close {
+            right: 0;
+        }
+
+        .lightbox-prev {
+            left: 0;
+        }
+
+        .lightbox-next {
+            left: 5em;
+        }
+
+        /* The main figure element that serves as the overlay */
+        #lightbox {
+            position: fixed;
+            height: 100%;
+            width: 100%;
+            top: 0;
+            left: 0;
+            margin: 0;
+        }
+
+        /* The main image in the large view */
+        #lightbox img {
+            display: block;
+            margin: auto;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        /* this is how the box goes away */
+        #lightbox.lightbox-hidden { display: none; }
+
+
+    </style>
+
+</head>
+<body>
+    <div id="container"></div>
+
+    <script type="text/javascript">
+
+        (function(){
+            var tags='tulane';
+            var script=document.createElement('script');
+            script.src = 'http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=cb&tags='+tags;
+            document.head.appendChild(script);
+        })();
+
+        // callback
+        function cb(data){
+            if (data.stat == "fail"){
+                document.getElementById('container').innerHTML += '<p>error: '+data.code+'</p>';
+            } else {
+                console.log(data);
+                for (var i=0; i<data.items.length; i++){
+                    var imgUrl = data.items[i].media.m,
+                        imgAlt = data.items[i].title,
+                        img = '<img src="'+imgUrl+'" alt="'+imgAlt+'">';
+                    var imgWrapper = document.createElement('div');
+                        imgWrapper.className = "image";
+                    imgWrapper.innerHTML += img;
+                    document.getElementById('container').appendChild(imgWrapper);
+                }
+            }
+        }
+
+
+
+        function rmClass(el, cNm){
+            el.className = el.className.replace(new RegExp('(^|\\b)' + cNm.split(' ').join('|') + '(\\b|$)', 'gi'), ' ').trim();
+        }
+
+        // when image is clicked
+        var parent = document.querySelector('#container');
+        parent.addEventListener('click', function (e) {
+            e.preventDefault();
+            var target = e.target;
+            while (target != parent) {
+                if (target && target.className == "image") {
+                    var img = target.getElementsByTagName('img')[0],
+                            src = img.getAttribute('src') || "",
+                            alt = img.getAttribute('alt') || "";
+                    openLightbox(img, src, alt);
+                }
+                target = target.parentNode;
+            }
+        });
+
+        document.body.addEventListener('click', function(e){
+            var t = e.target;
+            if (!t) return false;
+
+            if (t.className === 'lightbox-close') {
+                closeLightbox();
+            }
+
+            if (t.className === 'lightbox-next') {
+                next();
+            }
+
+            if (t.className === 'lightbox-prev') {
+                prev();
+            }
+        });
+
+        // display selected image in lightbox view
+        function openLightbox(el, src, alt, cls) {
+            cls = cls || "";
+            var lastFocus = '';
+
+            if (!document.getElementById('lightbox')) {
+                var o = document.createElement('figure');
+                o.setAttribute('id', 'lightbox');
+                o.setAttribute('index', '0');
+                document.body.appendChild(o);
+            }
+
+            var overlay = document.getElementById('lightbox');
+
+            if (lastFocus === "") {
+                this.lastFocus = document.activeElement;
+            }
+
+            var curr = document.getElementsByClassName('lightbox-curr');
+            for (var i = 0; i < curr.length; i++) {
+                rmClass(curr[i], 'lightbox-curr');
+            }
+
+            el.className += " " + 'lightbox-curr';
+
+            var img = '<img class="' + cls + '" src="' + src + '" alt="' + alt + '">',
+                    cap = '<div class="lightbox-caption">' + alt + '</div>',
+                    closeB = '<button role="close" class="lightbox-close">' + 'Close' + '</button>',
+                    nextB = '<button rel="next" class="lightbox-next">' + 'Next' + '</button>',
+                    prevB = '<button rel="prev" class="lightbox-prev">' + 'Prev' + '</button>',
+                    ctrls = '<div class="lightbox-ctrl">' + nextB + prevB + closeB + '</div>';
+
+            overlay.innerHTML = img + cap + ctrls;
+
+            rmClass(overlay, 'lightbox-hidden');
+            overlay.setAttribute("index", "0");
+            overlay.focus();
+
+            rmClass(overlay.getElementsByTagName('img')[0], cls);
+        }
+
+        // close the lightbox view and return to the grid view
+        function closeLightbox() {
+            document.getElementById('lightbox').className += 'lightbox-hidden';
+            document.body.style.top = "";
+            document.body.style.left = "";
+            this.lastFocus.focus();
+            this.lastFocus = "";
+        }
+
+        // show next image
+        function next() {
+            var curr = document.getElementsByClassName('lightbox-curr')[0] || document.getElementsByClassName('container')[0].getElementsByTagName('img')[0];
+
+            if (!curr.parentNode.nextElementSibling) { return false; }
+            var nextEl = curr.parentNode.nextElementSibling.getElementsByTagName('img')[0];
+
+            var nextSrc = nextEl.getAttribute('src'),
+                    nextAlt = nextEl.getAttribute('alt');
+            openLightbox(nextEl, nextSrc, nextAlt, 'lightbox-to-next');
+        }
+
+        // show previous image
+        function prev() {
+            var container = document.getElementsByClassName('container')[0],
+                    curr = document.getElementsByClassName('lightbox-curr')[0] || container.getElementsByTagName('IMG')[container.getElementsByTagName('img').length - 1];
+
+            if(!curr.parentNode.previousElementSibling){ return false; }
+            var prevEl = curr.parentNode.previousElementSibling.getElementsByTagName('img')[0];
+
+            var prevSrc = prevEl.getAttribute('src'),
+                    prevAlt = prevEl.getAttribute('alt');
+            openLightbox(prevEl, prevSrc, prevAlt, 'lightbox-to-prev');
+        }
+
+
+
+
+
+
+
+
+
+    </script>
+
+</body>
+</html>
