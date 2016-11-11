@@ -1,0 +1,87 @@
+/* The main figure element that serves as the overlay */
+#lightbox {
+    background: rgba(0,0,0,.8);
+}
+
+/* The main image in the large view */
+#lightbox img {
+    max-width: 96%;
+    max-height: 96%;
+    border-radius: .25em;
+    transition: all .5s;
+    -webkit-transition: all .5s;
+    -moz-transition: all .5s;
+}
+
+/* The image title as caption */
+.lightbox-caption {
+    color: rgba(255,255,255, .75);
+    font-family: sans-serif;
+    text-align: center;
+    max-width: 60em;
+    margin: auto;
+    padding: 1em 1.5em 2em 1.5em;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 0;
+    transition: all .5s;
+    -webkit-transition: all .5s;
+    -moz-transition: all .5s;
+    background: rgba(0,0,0, .7);
+    border-radius: .25em;
+}
+
+#lightbox img.lightbox-to-next {
+    transform: translate(999em, 0);
+    -webkit-transform: translate(999em, 0);
+    -moztransform: translate(999em, 0);
+}
+
+#lightbox img.lightbox-to-prev {
+    transform: translate(-999em, 0);
+    -webkit-transform: translate(-999em, 0);
+    -moztransform: translate(-999em, 0);
+}
+
+/* buttons in the lightbox */
+#lightbox button {
+    cursor: pointer;
+    border: none;
+    font-size: 1em;
+    position: absolute;
+    background: rgba(0,0,0,.8);
+    color: #fff;
+    padding: .25em;
+    border-radius: .25em;
+    font-family: sans-serif;
+    font-weight: bold;
+}
+
+#lightbox button:focus {
+    outline: none;
+    box-shadow: 0 0 0 .25em #fff;
+}
+
+.lightbox-ctrl {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    max-width: 60em;
+}
+
+/* close button */
+.lightbox-close {
+    right: 0;
+}
+
+.lightbox-prev {
+    left: 0;
+}
+
+.lightbox-next {
+    left: 5em;
+}
